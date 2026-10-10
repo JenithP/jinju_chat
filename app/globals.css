@@ -1,0 +1,26 @@
+:root {
+  --navy: #0b2c66;
+  --blue: #1565c0;
+  --green: #2e9b3a;
+  --green-dark: #1f7a2b;
+  --ink: #1b2430;
+  --muted: #5b6676;
+  --line: #e3e8ee;
+  --bg: #ffffff;
+  --bg-soft: #f4f8f5;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  word-break: keep-all;
+}
+
+a { color: inherit; }
+button { font-family: inherit; }
