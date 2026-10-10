@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { logEvent } from "@/lib/log";
+import { useState } from "react";
 import s from "./donate.module.css";
 
 const AMOUNTS = [10000, 30000, 50000, 100000];
@@ -10,9 +8,6 @@ const AMOUNTS = [10000, 30000, 50000, 100000];
 const won = (n: number) => n.toLocaleString("ko-KR") + "원";
 
 export default function DonateClient() {
-  const params = useSearchParams();
-  const ids = { sid: params.get("sid"), pid: params.get("pid"), type: params.get("type") };
-
   const [kind, setKind] = useState<"정기" | "일시">("정기");
   const [amount, setAmount] = useState<number | null>(30000);
   const [custom, setCustom] = useState("");
@@ -20,14 +15,8 @@ export default function DonateClient() {
 
   const finalAmount = amount ?? (Number(custom.replace(/[^0-9]/g, "")) || 0);
 
-  useEffect(() => {
-    logEvent({ ...ids, event: "donate_page_view" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   function submit() {
     if (finalAmount <= 0) return;
-    logEvent({ ...ids, event: "donate_submit", detail: { kind, amount: finalAmount } });
     setDone(true);
   }
 

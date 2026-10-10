@@ -5,10 +5,10 @@
 
 const SHEET_NAME = "log";
 const HEADERS = [
-  "server_ts", "client_ts", "sid", "pid", "type",
+  "server_ts", "client_ts", "code", "pid", "type",
   "verbal_cue", "nonverbal_cue", "style", "person", "name",
   "profile", "emoticon", "typing", "delay",
-  "event", "detail",
+  "event", "donate_clicked", "duration_sec", "detail",
 ];
 
 function doPost(e) {

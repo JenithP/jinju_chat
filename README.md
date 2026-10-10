@@ -22,19 +22,27 @@
    - 코드를 수정한 경우 **배포 관리 → 수정 → 새 버전** 으로 재배포해야 반영된다 (주소는 유지).
 3. Vercel 프로젝트 **Settings → Environment Variables** 에 `SHEETS_WEBHOOK_URL` = 복사한 주소를 등록하고 재배포한다.
 
-시트의 `log` 탭에 한 이벤트당 한 행이 쌓인다.
+시트의 `log` 탭에 기록되는 이벤트는 두 가지뿐이다.
+
+| event | 언제 | 비고 |
+|---|---|---|
+| `donate_link_click` | 후원 신청 링크를 누를 때마다 | 대화 종료 후에 눌러도 기록 (detail.after_end = Y) |
+| `chat_end` | 대화가 끝났을 때 1회 | donate_clicked = 그때까지 링크 클릭 여부 (Y/N) |
 
 | 열 | 내용 |
 |---|---|
 | server_ts / client_ts | 서버 수신 시각 / 브라우저 발생 시각 (UTC) |
-| sid | 세션 ID (새로고침하면 새 세션) |
+| code | 완료 코드 = 세션 식별자. 참가자가 설문에 입력하는 코드와 같다 |
 | pid | 참가자 ID |
 | type, verbal_cue, nonverbal_cue | 조건과 단서 수준 |
 | style, person, name, profile, emoticon, typing, delay | 독립변수별 값 |
-| event | 아래 이벤트 종류 |
-| detail | 이벤트별 상세 (JSON) |
+| event | donate_link_click / chat_end |
+| donate_clicked | Y / N |
+| duration_sec | 대화 시작부터 종료까지 걸린 시간(초), chat_end 행에만 |
+| detail | 기타 상세 (JSON) |
 
-이벤트 종류: `session_start`, `agent_message`, `user_click`(detail.rt_ms = 버튼이 나타난 뒤 클릭까지 걸린 ms), `donate_link_click`, `donate_page_view`, `donate_submit`(정기/일시, 금액), `tab_hidden` / `tab_visible`, `chat_end`(detail.code = 완료 코드, duration_ms), `code_copy`.
+분석 시 **code 별로 `donate_link_click` 행이 하나라도 있으면 클릭한 것**으로 본다.
+(`chat_end`의 donate_clicked 는 종료 시점 기준이라, 종료 후 클릭은 별도 행으로만 남는다.)
 
 ## 배포 (Vercel)
 

@@ -4,7 +4,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getCondition } from "@/lib/conditions";
 import { LINK_LABEL, SCRIPT, type AgentMsg } from "@/lib/script";
-import { logEvent } from "@/lib/log";
+import { logEvent, type LogEvent } from "@/lib/log";
 import s from "./chat.module.css";
 
 type Item =
@@ -23,29 +23,30 @@ export default function ChatClient() {
   const cond = getCondition(params.get("type"));
   const pid = params.get("pid");
 
-  const [sid] = useState(() => (typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : String(Date.now())));
+  // 완료 코드는 시작 시 생성해 모든 로그 행에 붙인다 (설문 응답과 매칭용)
+  const [code] = useState(makeCode);
   const [items, setItems] = useState<Item[]>([]);
   const [typing, setTyping] = useState(false);
   const [stepIdx, setStepIdx] = useState(0); // 마지막으로 재생한 스텝
   const [waiting, setWaiting] = useState(true); // 에이전트 응답 재생 중
-  const [code, setCode] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const started = useRef(false);
   const startedAt = useRef(0);
-  const optionsShownAt = useRef(0);
+  const donateClicks = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const steps = cond ? SCRIPT[cond.verbal === "높음" ? "high" : "low"] : [];
-  const ids = { sid, pid, type: cond?.type ?? params.get("type") };
   const humanLike = cond?.nonverbal === "높음";
   const name = cond?.name ?? "";
   const profile = humanLike ? "/images/profile-person.jpg" : "/images/profile-logo.png";
 
   const log = useCallback(
-    (event: string, detail?: Record<string, unknown>) => logEvent({ ...ids, event, detail }),
+    (event: LogEvent["event"], detail?: Record<string, unknown>) =>
+      logEvent({ code, pid, type: cond?.type ?? params.get("type"), event, detail }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [sid, pid, cond?.type],
+    [code, pid, cond?.type],
   );
 
   const playAgent = useCallback(
@@ -57,18 +58,18 @@ export default function ChatClient() {
         if (cond.delay === "사용") await sleep(m.delay * 1000);
         setTyping(false);
         setItems((prev) => [...prev, { kind: "agent", text: m.text }]);
-        log("agent_message", { step: steps[idx].id, text: m.text.slice(0, 40) });
         if (m.emoticon && cond.emoticon === "사용") {
           setItems((prev) => [...prev, { kind: "emoticon" }]);
         }
       }
       setStepIdx(idx);
       if (idx >= steps.length - 1) {
-        const c = makeCode();
-        setCode(c);
-        log("chat_end", { code: c, duration_ms: Date.now() - startedAt.current });
+        setDone(true);
+        log("chat_end", {
+          donate_clicked: donateClicks.current > 0 ? "Y" : "N",
+          duration_sec: Math.round((Date.now() - startedAt.current) / 1000),
+        });
       } else {
-        optionsShownAt.current = Date.now();
         setWaiting(false);
       }
     },
@@ -80,22 +81,13 @@ export default function ChatClient() {
     if (!cond || started.current) return;
     started.current = true;
     startedAt.current = Date.now();
-    log("session_start", {
-      ua: navigator.userAgent,
-      screen: `${window.screen.width}x${window.screen.height}`,
-      viewport: `${window.innerWidth}x${window.innerHeight}`,
-    });
     playAgent(steps[0].agent, 0);
-
-    const onVis = () => log(document.hidden ? "tab_hidden" : "tab_visible");
-    document.addEventListener("visibilitychange", onVis);
-    return () => document.removeEventListener("visibilitychange", onVis);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cond?.type]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [items, typing, waiting, code]);
+  }, [items, typing, waiting, done]);
 
   if (!cond) {
     return (
@@ -112,11 +104,15 @@ export default function ChatClient() {
     if (!next?.user || waiting) return;
     setWaiting(true);
     setItems((prev) => [...prev, { kind: "user", text: next.user! }]);
-    log("user_click", { step: next.id, text: next.user, rt_ms: Date.now() - optionsShownAt.current });
     playAgent(next.agent, stepIdx + 1);
   }
 
-  const donateHref = `/donate?${new URLSearchParams({ sid, pid: pid ?? "", type: cond.type }).toString()}`;
+  function onDonateClick() {
+    donateClicks.current += 1;
+    log("donate_link_click", { nth: donateClicks.current, after_end: done ? "Y" : "N" });
+  }
+
+  const donateHref = "/donate";
   const linkLabel = LINK_LABEL[cond.verbal === "높음" ? "high" : "low"];
 
   function renderText(text: string) {
@@ -130,7 +126,7 @@ export default function ChatClient() {
             href={donateHref}
             target="_blank"
             rel="noopener"
-            onClick={() => log("donate_link_click")}
+            onClick={onDonateClick}
           >
             {linkLabel}
           </a>
@@ -140,11 +136,9 @@ export default function ChatClient() {
   }
 
   async function copyCode() {
-    if (!code) return;
     try {
       await navigator.clipboard.writeText(code);
       setCopied(true);
-      log("code_copy");
     } catch {
       // 복사 실패 시 사용자가 직접 입력
     }
@@ -203,7 +197,7 @@ export default function ChatClient() {
             </div>
           )}
 
-          {code && (
+          {done && (
             <div className={s.complete}>
               <p className={s.completeTitle}>대화가 종료되었습니다</p>
               <p className={s.completeDesc}>아래 완료 코드를 설문에 입력해 주세요.</p>
@@ -217,7 +211,7 @@ export default function ChatClient() {
           <div ref={bottomRef} />
         </main>
 
-        {!code && (
+        {!done && (
           <footer className={s.choices}>
             {next?.user && !waiting ? (
               <button className={s.choice} onClick={onChoose}>

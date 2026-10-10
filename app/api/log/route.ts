@@ -12,10 +12,11 @@ export async function POST(req: Request) {
   }
 
   const c = getCondition(data.type as string | undefined);
+  const detail = (data.detail ?? {}) as Record<string, unknown>;
   const row = {
     server_ts: new Date().toISOString(),
     client_ts: data.ts ?? "",
-    sid: data.sid ?? "",
+    code: data.code ?? "",
     pid: data.pid ?? "",
     type: c?.type ?? String(data.type ?? ""),
     verbal_cue: c?.verbal ?? "",
@@ -28,7 +29,9 @@ export async function POST(req: Request) {
     typing: c?.typing ?? "",
     delay: c?.delay ?? "",
     event: data.event ?? "",
-    detail: data.detail ? JSON.stringify(data.detail) : "",
+    donate_clicked: detail.donate_clicked ?? (data.event === "donate_link_click" ? "Y" : ""),
+    duration_sec: detail.duration_sec ?? "",
+    detail: Object.keys(detail).length ? JSON.stringify(detail) : "",
   };
 
   const url = process.env.SHEETS_WEBHOOK_URL;

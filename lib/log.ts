@@ -1,9 +1,9 @@
-// 이벤트 로그 전송. 저장소(Supabase 등)가 정해지면 /api/log 라우트에서 연결한다.
+// 이벤트 로그 전송. /api/log 가 실험 조건을 붙여 Google Sheets 로 넘긴다.
 export type LogEvent = {
-  sid?: string | null; // 세션 ID (챗봇 세션과 연결)
+  code: string; // 완료 코드 (세션 식별자 겸 설문 매칭용)
   pid?: string | null; // 참가자 ID
   type?: string | null; // 실험 조건 A/B/C/D
-  event: string;
+  event: "donate_link_click" | "chat_end";
   detail?: Record<string, unknown>;
 };
 
