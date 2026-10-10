@@ -151,7 +151,11 @@ export default function ChatClient() {
           <img className={s.headerAvatar} src={profile} alt="" />
           <div>
             <strong>{name}</strong>
-            <span>기후연대</span>
+            {typing ? (
+              <span className={s.headerTyping}>{name === "연우" ? "연우 님이" : "챗봇이"} 작성 중입니다…</span>
+            ) : (
+              <span>기후연대</span>
+            )}
           </div>
         </header>
 
@@ -190,8 +194,10 @@ export default function ChatClient() {
               </div>
               <div className={s.agentCol}>
                 {!(items.length && items[items.length - 1].kind !== "user") && <span className={s.name}>{name}</span>}
-                <div className={`${s.agentBubble} ${s.typing}`}>
-                  작성 중입니다<span className={s.dots}><i>.</i><i>.</i><i>.</i></span>
+                <div className={`${s.agentBubble} ${s.typing}`} role="status" aria-label="입력 중">
+                  <i />
+                  <i />
+                  <i />
                 </div>
               </div>
             </div>
