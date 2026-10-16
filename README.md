@@ -6,14 +6,28 @@
 
 | 조건 | 언어적 단서 | 비언어적 단서 | URL |
 |---|---|---|---|
-| A | 높음 (대화형·1인칭·연우) | 높음 (사람 얼굴·이모티콘·입력 중 점 표시·응답 지연) | `/?type=A&pid=참가자ID` |
-| B | 높음 | 낮음 (조직 로고·즉시 응답) | `/?type=B&pid=참가자ID` |
-| C | 낮음 (비대화형·비인칭·챗봇) | 높음 | `/?type=C&pid=참가자ID` |
-| D | 낮음 | 낮음 | `/?type=D&pid=참가자ID` |
+| A | 높음 (대화형·1인칭·연우) | 높음 (사람 얼굴·이모티콘·입력 중 점 표시·응답 지연) | `/?type=A&panel_id=[ID]` |
+| B | 높음 | 낮음 (조직 로고·즉시 응답) | `/?type=B&panel_id=[ID]` |
+| C | 낮음 (비대화형·비인칭·챗봇) | 높음 | `/?type=C&panel_id=[ID]` |
+| D | 낮음 | 낮음 | `/?type=D&panel_id=[ID]` |
 
-- `pid`는 선택. Qualtrics에서 넘길 경우 `pid=${e://Field/ResponseID}` 형태로 붙인다.
-- 대화가 끝나면 6자리 **완료 코드**가 표시된다. 참가자는 이 코드를 설문에 입력하고 창을 닫는다.
+- `panel_id`: 엠브레인이 넘기는 응답자 ID. 로그의 `pid` 열에 기록된다. (이전 방식의 `pid` 파라미터도 받는다)
+- 에이전트 답변이 표시된 뒤 `readWait`초(5·7·10초)가 지나야 다음 질문 버튼이 나타난다. 마지막 답변 뒤에는 5초 후 완료 화면이 나온다. 네 조건 공통.
+- 대화가 끝나면 6자리 **완료 코드**와 **설문으로 돌아가기** 버튼이 표시된다. 코드는 설문에 입력하지 않는다(완료 인지용).
 - 후원 신청 링크는 새 탭으로 가상의 후원 페이지(`/donate`)를 연다. 실제 결제는 없다.
+
+## 설문 복귀 (엠브레인)
+
+"설문으로 돌아가기" 버튼은 `/return?panel_id=[ID]&status=001` 로 이동하고, 서버가 환경변수 `RETURN_URL` 의 주소로 리디렉션한다.
+
+```
+RETURN_URL=http://survey.panel.co.kr/2019/XXXX/m5.asp?panel_id={panel_id}&status={status}
+```
+
+- `{panel_id}`, `{status}` 자리에 값이 들어간다. 자리표시자가 없으면 `panel_id`, `status` 쿼리를 덧붙인다.
+- 상태값: `001` 완료 / `002` 초과 / `003` 아웃. 현재 챗봇은 완료(`001`)만 보낸다.
+- `RETURN_URL` 이 없으면 버튼을 눌렀을 때 "설문 복귀 주소가 아직 설정되지 않았습니다." 가 표시된다.
+- 복귀 주소는 쿼리로 받지 않고 환경변수로만 설정한다 (임의 사이트로의 리디렉션 방지).
 
 ## 로그 (Google Sheets)
 
@@ -32,8 +46,8 @@
 | 열 | 내용 |
 |---|---|
 | server_ts / client_ts | 서버 수신 시각 / 브라우저 발생 시각 (UTC) |
-| code | 완료 코드 = 세션 식별자. 참가자가 설문에 입력하는 코드와 같다 |
-| pid | 참가자 ID |
+| code | 완료 코드 = 세션 식별자 (완료 화면에 표시되는 코드) |
+| pid | 엠브레인 panel_id |
 | type, verbal_cue, nonverbal_cue | 조건과 단서 수준 |
 | style, person, name, profile, emoticon, typing, delay | 독립변수별 값 |
 | event | donate_link_click / chat_end |
@@ -47,7 +61,7 @@
 ## 배포 (Vercel)
 
 1. 이 저장소를 Vercel에서 **Add New → Project → Import** 한다. 프레임워크는 Next.js 자동 인식.
-2. 위의 `SHEETS_WEBHOOK_URL` 환경변수를 등록한다.
+2. 위의 `SHEETS_WEBHOOK_URL`, `RETURN_URL` 환경변수를 등록한다.
 3. 이후 `main` 브랜치에 push 하면 자동 배포된다.
 
 ## 로컬 실행
@@ -62,6 +76,6 @@ npm run dev
 
 ## 대본 수정
 
-- 대화 문구와 응답 지연(초): `lib/script.ts`
+- 대화 문구, 응답 지연(초), 질문 표시 대기(초): `lib/script.ts`
 - 조건별 독립변수 값: `lib/conditions.ts`
-- 이미지: `public/images/` (profile-person.jpg, profile-logo.png, emoji-greeting.gif)
+- 이미지: `public/images/` (profile-person.jpg, profile-logo.png, emoji-greeting.gif, emoji-thanks.gif)

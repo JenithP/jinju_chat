@@ -9,7 +9,7 @@ import s from "./chat.module.css";
 
 type Item =
   | { kind: "agent"; text: string }
-  | { kind: "emoticon" }
+  | { kind: "emoticon"; which: "greeting" | "thanks" }
   | { kind: "user"; text: string };
 
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -21,16 +21,16 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 export default function ChatClient() {
   const params = useSearchParams();
   const cond = getCondition(params.get("type"));
-  const pid = params.get("pid");
+  // 엠브레인은 panel_id 로 응답자 ID를 넘긴다. (pid 는 이전 방식 호환)
+  const pid = params.get("panel_id") ?? params.get("pid");
 
-  // 완료 코드는 시작 시 생성해 모든 로그 행에 붙인다 (설문 응답과 매칭용)
+  // 완료 코드는 시작 시 생성해 모든 로그 행에 붙인다 (세션 식별용)
   const [code] = useState(makeCode);
   const [items, setItems] = useState<Item[]>([]);
   const [typing, setTyping] = useState(false);
   const [stepIdx, setStepIdx] = useState(0); // 마지막으로 재생한 스텝
   const [waiting, setWaiting] = useState(true); // 에이전트 응답 재생 중
   const [done, setDone] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   const started = useRef(false);
   const startedAt = useRef(0);
@@ -59,9 +59,11 @@ export default function ChatClient() {
         setTyping(false);
         setItems((prev) => [...prev, { kind: "agent", text: m.text }]);
         if (m.emoticon && cond.emoticon === "사용") {
-          setItems((prev) => [...prev, { kind: "emoticon" }]);
+          setItems((prev) => [...prev, { kind: "emoticon", which: m.emoticon! }]);
         }
       }
+      // 답변을 읽을 시간: 지정된 시간이 지나야 다음 질문 버튼(마지막은 완료 화면)이 나타난다
+      await sleep(steps[idx].readWait * 1000);
       setStepIdx(idx);
       if (idx >= steps.length - 1) {
         setDone(true);
@@ -135,14 +137,7 @@ export default function ChatClient() {
     ));
   }
 
-  async function copyCode() {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-    } catch {
-      // 복사 실패 시 사용자가 직접 입력
-    }
-  }
+  const returnHref = `/return?${new URLSearchParams({ panel_id: pid ?? "", status: "001" }).toString()}`;
 
   return (
     <div className={s.shell}>
@@ -176,7 +171,11 @@ export default function ChatClient() {
                 <div className={s.agentCol}>
                   {!grouped && <span className={s.name}>{name}</span>}
                   {it.kind === "emoticon" ? (
-                    <img className={s.emoticon} src="/images/emoji-greeting.gif" alt="" />
+                    <img
+                      className={s.emoticon}
+                      src={it.which === "thanks" ? "/images/emoji-thanks.gif" : "/images/emoji-greeting.gif"}
+                      alt=""
+                    />
                   ) : (
                     <div className={s.agentBubble}>{renderText(it.text)}</div>
                   )}
@@ -206,12 +205,13 @@ export default function ChatClient() {
           {done && (
             <div className={s.complete}>
               <p className={s.completeTitle}>대화가 종료되었습니다</p>
-              <p className={s.completeDesc}>아래 완료 코드를 설문에 입력해 주세요.</p>
               <div className={s.codeBox}>
+                <small>완료 코드</small>
                 <span>{code}</span>
-                <button onClick={copyCode}>{copied ? "복사됨" : "복사"}</button>
               </div>
-              <p className={s.completeHint}>코드를 입력한 뒤 이 창을 닫아 주세요.</p>
+              <a className={s.returnBtn} href={returnHref}>
+                설문으로 돌아가기
+              </a>
             </div>
           )}
           <div ref={bottomRef} />

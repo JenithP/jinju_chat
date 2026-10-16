@@ -1,10 +1,12 @@
-// 대화 스크립트. 출처: 챗봇제작_스크립트_261001.xlsx
+// 대화 스크립트. 출처: 챗봇제작_스크립트_261016.xlsx
 // - delay: 비언어적 단서 '높음' 조건에서의 응답 지연(초). '낮음' 조건은 즉시 응답.
+// - readWait: 에이전트 답변이 모두 표시된 뒤 다음 User 질문 버튼이 나타나기까지의 대기(초). 네 조건 공통.
+//   마지막 스텝은 완료 화면이 표시되기까지의 대기.
 // - {{LINK}}: 후원 신청 페이지 링크로 치환된다.
-// - emoticon: 비언어적 단서 '높음' 조건에서 해당 메시지 뒤에 인사 이모티콘을 붙인다.
+// - emoticon: 비언어적 단서 '높음' 조건에서 해당 메시지 뒤에 붙이는 이모티콘 (환영 인사 / 감사).
 
-export type AgentMsg = { text: string; delay: number; emoticon?: boolean };
-export type Step = { id: string; user?: string; agent: AgentMsg[] };
+export type AgentMsg = { text: string; delay: number; emoticon?: "greeting" | "thanks" };
+export type Step = { id: string; user?: string; agent: AgentMsg[]; readWait: number };
 
 type Script = { high: Step[]; low: Step[] };
 
@@ -24,13 +26,15 @@ export const SCRIPT: Script = {
   high: [
     {
       id: "greeting",
+      readWait: 5,
       agent: [
-        { text: "안녕하세요! 기후연대에 방문해 주셔서 감사합니다.", delay: 3, emoticon: true },
+        { text: "안녕하세요! 기후연대에 방문해 주셔서 감사합니다.", delay: 3, emoticon: "greeting" },
         { text: "저는 안내를 도와드릴 챗봇 연우예요.\n무엇을 도와드릴까요?", delay: 3 },
       ],
     },
     {
       id: "org",
+      readWait: 7,
       user: USER.org,
       agent: [
         {
@@ -41,6 +45,7 @@ export const SCRIPT: Script = {
     },
     {
       id: "campaign",
+      readWait: 10,
       user: USER.campaign,
       agent: [
         {
@@ -51,6 +56,7 @@ export const SCRIPT: Script = {
     },
     {
       id: "situation",
+      readWait: 10,
       user: USER.situation,
       agent: [
         {
@@ -61,16 +67,18 @@ export const SCRIPT: Script = {
     },
     {
       id: "usage",
+      readWait: 10,
       user: USER.usage,
       agent: [
         {
-          text: "저희는 전 세계 기후난민을 위한 구호 활동에 후원금을 사용하고 있어요. 2024년에는 후원금으로 5만 개 이상의 위생 키트와 2,000톤의 긴급 식량을 지원했고, 1만 개의 임시 거주 시설과 50개의 이동식 진료소를 마련했어요. 이를 통해 기후재난지역의 2만 가구 이상을 지원할 수 있었어요.",
+          text: "저희는 전 세계 기후 난민을 위한 구호 활동에 후원금을 사용하고 있어요. 2024년에는 후원금으로 5만 개 이상의 위생 키트와 2,000톤의 긴급 식량을 지원했고, 1만 개의 임시 거주 시설과 50개의 이동식 진료소를 마련했어요. 이를 통해 기후 재난 지역의 2만 가구 이상을 지원할 수 있었어요.",
           delay: 4,
         },
       ],
     },
     {
       id: "manage",
+      readWait: 10,
       user: USER.manage,
       agent: [
         {
@@ -81,6 +89,7 @@ export const SCRIPT: Script = {
     },
     {
       id: "apply",
+      readWait: 7,
       user: USER.apply,
       agent: [
         {
@@ -91,13 +100,15 @@ export const SCRIPT: Script = {
     },
     {
       id: "thanks",
+      readWait: 5,
       user: USER.thanks,
       agent: [{ text: "네, 감사합니다. 더 궁금한 점이 있으신가요?", delay: 2 }],
     },
     {
       id: "end",
+      readWait: 5,
       user: USER.no,
-      agent: [{ text: "문의해 주셔서 감사합니다. 대화를 종료할게요.", delay: 2, emoticon: true }],
+      agent: [{ text: "문의해 주셔서 감사합니다. 대화를 종료할게요.", delay: 2, emoticon: "thanks" }],
     },
   ],
 
@@ -105,18 +116,21 @@ export const SCRIPT: Script = {
   low: [
     {
       id: "greeting",
+      readWait: 5,
       agent: [
-        { text: "기후연대의 기후난민지원 캠페인 안내 페이지입니다.", delay: 3, emoticon: true },
+        { text: "기후연대의 기후난민지원 캠페인 안내 페이지입니다.", delay: 3, emoticon: "greeting" },
         { text: "이 챗봇은 자동 응답 시스템으로 운영됩니다.\n문의 내용을 입력해주십시오.", delay: 3 },
       ],
     },
     {
       id: "org",
+      readWait: 7,
       user: USER.org,
       agent: [{ text: "[기후연대란]\n• 기후 변화로 삶의 터전을 잃은 이재민에게 인도적 지원을 제공하는 비영리단체", delay: 3 }],
     },
     {
       id: "campaign",
+      readWait: 10,
       user: USER.campaign,
       agent: [
         {
@@ -127,6 +141,7 @@ export const SCRIPT: Script = {
     },
     {
       id: "situation",
+      readWait: 10,
       user: USER.situation,
       agent: [
         {
@@ -137,16 +152,18 @@ export const SCRIPT: Script = {
     },
     {
       id: "usage",
+      readWait: 10,
       user: USER.usage,
       agent: [
         {
-          text: "[후원금 사용]\n• 전 세계 기후난민을 위한 구호 활동에 사용\n• 2024년 기준\n  - 위생 키트 5만 개 이상\n  - 긴급 식량 2,000톤\n  - 임시 거주 시설 1만 개\n  - 이동식 진료소 50개\n  - 기후재난지역 2만 가구 이상 지원",
+          text: "[후원금 사용]\n• 전 세계 기후 난민을 위한 구호 활동에 사용\n• 2024년 기준\n  - 위생 키트 5만 개 이상\n  - 긴급 식량 2,000톤\n  - 임시 거주 시설 1만 개\n  - 이동식 진료소 50개\n  - 기후 재난 지역 2만 가구 이상 지원",
           delay: 4,
         },
       ],
     },
     {
       id: "manage",
+      readWait: 10,
       user: USER.manage,
       agent: [
         {
@@ -157,18 +174,21 @@ export const SCRIPT: Script = {
     },
     {
       id: "apply",
+      readWait: 7,
       user: USER.apply,
       agent: [{ text: "[후원 안내]\n• 공식 웹사이트에서 상시 후원 신청 가능\n{{LINK}}", delay: 3 }],
     },
     {
       id: "thanks",
+      readWait: 5,
       user: USER.thanks,
       agent: [{ text: "추가 문의사항이 있습니까?", delay: 2 }],
     },
     {
       id: "end",
+      readWait: 5,
       user: USER.no,
-      agent: [{ text: "대화를 종료합니다.", delay: 2, emoticon: true }],
+      agent: [{ text: "대화를 종료합니다.", delay: 2, emoticon: "thanks" }],
     },
   ],
 };
