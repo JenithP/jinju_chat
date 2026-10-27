@@ -18,16 +18,16 @@
 
 ## 설문 복귀 (엠브레인)
 
-"설문으로 돌아가기" 버튼은 `/return?panel_id=[ID]&status=001` 로 이동하고, 서버가 환경변수 `RETURN_URL` 의 주소로 리디렉션한다.
+"설문으로 돌아가기" 버튼은 `/return?panel_id=[ID]` 로 이동하고, 서버가 엠브레인 복귀 주소로 리디렉션한다.
 
 ```
-RETURN_URL=http://survey.panel.co.kr/2019/XXXX/m5.asp?panel_id={panel_id}&status={status}
+https://survey.panel.co.kr/2026/154736/m11.asp?panel_id={panel_id}
 ```
 
-- `{panel_id}`, `{status}` 자리에 값이 들어간다. 자리표시자가 없으면 `panel_id`, `status` 쿼리를 덧붙인다.
-- 상태값: `001` 완료 / `002` 초과 / `003` 아웃. 현재 챗봇은 완료(`001`)만 보낸다.
-- `RETURN_URL` 이 없으면 버튼을 눌렀을 때 "설문 복귀 주소가 아직 설정되지 않았습니다." 가 표시된다.
-- 복귀 주소는 쿼리로 받지 않고 환경변수로만 설정한다 (임의 사이트로의 리디렉션 방지).
+- 이 주소는 `app/return/route.ts` 의 `DEFAULT_RETURN_URL` 에 들어 있다. Vercel 환경변수 `RETURN_URL` 을 설정하면 그 값이 우선한다.
+- `{panel_id}` 자리에 응답자 ID가 들어간다. 주소에 `{status}` 를 넣으면 상태값(`001` 완료 / `002` 초과 / `003` 아웃, 기본 `001`)도 들어간다.
+- 엠브레인 안내에 따라 현재는 status 를 넘기지 않는다 (완료 외 종료 상태 없음).
+- 복귀 주소는 쿼리로 받지 않는다 (임의 사이트로의 리디렉션 방지).
 
 ## 로그 (Google Sheets)
 
@@ -61,7 +61,7 @@ RETURN_URL=http://survey.panel.co.kr/2019/XXXX/m5.asp?panel_id={panel_id}&status
 ## 배포 (Vercel)
 
 1. 이 저장소를 Vercel에서 **Add New → Project → Import** 한다. 프레임워크는 Next.js 자동 인식.
-2. 위의 `SHEETS_WEBHOOK_URL`, `RETURN_URL` 환경변수를 등록한다.
+2. 위의 `SHEETS_WEBHOOK_URL` 환경변수를 등록한다. (`RETURN_URL` 은 선택)
 3. 이후 `main` 브랜치에 push 하면 자동 배포된다.
 
 ## 로컬 실행
